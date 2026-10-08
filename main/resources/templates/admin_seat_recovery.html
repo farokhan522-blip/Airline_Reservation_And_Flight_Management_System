@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Seat Recovery | SkyAdmin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f1f5f9; font-family: 'Inter', sans-serif; }
+        .recovery-table { background: white; border-radius: 25px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
+        .table thead { background: linear-gradient(90deg, #4361ee, #7209b7); color: white; }
+        .badge-recovered { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; padding: 8px 15px; border-radius: 12px; }
+        .pulse-dot { height: 10px; width: 10px; background-color: #22c55e; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 rgba(34, 197, 94, 0.4); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+    </style>
+</head>
+<body class="p-5">
+    <div class="container">
+        <h2 class="fw-bold mb-4">Seat Recovery Logs <span class="pulse-dot ms-2"></span></h2>
+        <div class="recovery-table p-4">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Passenger Name</th>
+                        <th>Flight ID</th>
+                        <th>Seat Freed</th>
+                        <th>Class</th>
+                        <th>Refund Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="log : ${logs}">
+                        <td><b th:text="${log.passengerName}"></b></td>
+                        <td th:text="${log.flightId}"></td>
+                        <td><span class="badge-recovered"><i class="fas fa-chair me-1"></i> <span th:text="${log.seatNo}"></span></span></td>
+                        <td th:text="${log.travelClass}"></td>
+                        <td class="text-success fw-bold">PROCESSED</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

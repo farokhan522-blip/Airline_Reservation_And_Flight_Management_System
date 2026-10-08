@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Payment Summary</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* --- Base Theme --- */
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            margin: 0; padding: 0; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            min-height: 100vh; 
+            display: flex; justify-content: center; align-items: center; 
+            padding: 40px;
+            background-image: url('/images/payment.jpg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+        } 
+        
+
+        .container { 
+            background: rgba(255, 255, 255, 0.98); 
+            width: 900px; 
+            max-width: 95%; 
+            border-radius: 20px; 
+            padding: 40px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3); 
+        }
+
+        h2 { text-align: center; color: #2d3436; margin-bottom: 20px; }
+        
+        /* --- Flight Info Card --- */
+        .flight-card {
+            background: #f8f9fa;
+            border-left: 5px solid #6c5ce7;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .flight-route { font-size: 18px; font-weight: bold; color: #2d3436; }
+        .flight-meta { color: #636e72; font-size: 14px; }
+
+        /* --- Passenger Table --- */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        th { background: #6c5ce7; color: white; padding: 12px; text-align: left; border-radius: 5px 5px 0 0; }
+        td { padding: 12px; border-bottom: 1px solid #dfe6e9; color: #2d3436; font-size: 14px; }
+        tr:last-child td { border-bottom: none; }
+        
+        .badge { 
+            padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; color: white; 
+        }
+        .bg-gold { background: #f1c40f; }   /* First */
+        .bg-purple { background: #9b59b6; } /* Business */
+        .bg-blue { background: #a29bfe; }   /* Economy */
+
+        /* --- Total & Button --- */
+        .total-section { 
+            text-align: right; border-top: 2px solid #eee; padding-top: 20px; 
+        }
+        .total-label { font-size: 16px; color: #636e72; }
+        .total-price { font-size: 32px; font-weight: bold; color: #27ae60; margin: 10px 0; }
+
+        .btn-confirm { 
+            width: 100%; padding: 18px; 
+            background: linear-gradient(45deg, #00b894, #00cec9); 
+            color: white; border: none; border-radius: 12px; 
+            font-size: 18px; font-weight: 600; cursor: pointer; 
+            box-shadow: 0 10px 20px rgba(0, 184, 148, 0.3); 
+            transition: all 0.3s ease; 
+        }
+        .btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 15px 25px rgba(0, 184, 148, 0.4); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Confirm Your Booking</h2>
+
+        <div class="flight-card">
+            <div>
+                <div class="flight-route">
+                    <span th:text="${flight.source}">LHE</span> ➝ <span th:text="${flight.destination}">KHI</span>
+                </div>
+                <div class="flight-meta">Flight ID: <b th:text="${flight.flightId}"></b></div>
+            </div>
+            <div style="text-align: right;">
+                <div class="flight-meta">📅 <span th:text="${flight.date}"></span></div>
+                <div class="flight-meta">⏰ <span th:text="${flight.time}"></span></div>
+            </div>
+        </div>
+
+        <h3>Passenger Details</h3>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Seat</th>
+                    <th>Name</th>
+                    <th>Age</th> 
+                    <th>Passport</th>
+                    <th>Class</th>
+                    <th>Meal</th>
+                    <th>Ticket-Price</th> 
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="i : ${#numbers.sequence(0, seatNos.size() - 1)}">
+                    <td><b th:text="${seatNos[i]}">1A</b></td>
+                    <td th:text="${pNames[i]}">John Doe</td>
+                    <td th:text="${pAges[i]}">25</td>
+                    <td th:text="${pPassports[i]}">A1234</td>
+                    <td>
+                        <span class="badge" 
+                              th:classappend="${pClasses[i] == 'FIRSTCLASS' ? 'bg-gold' : (pClasses[i] == 'BUSINESS' ? 'bg-purple' : 'bg-blue')}"
+                              th:text="${pClasses[i]}">ECONOMY</span>
+                    </td>
+                    <td th:text="${pMeals[i]}">VEG</td>
+                    <td style="font-weight: bold; color: #27ae60;">
+                        $. <span th:text="${pPrices != null ? pPrices[i] : 'Checking...'}">5000</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="total-section">
+            <span class="total-label">Total Amount Payable</span>
+            <div class="total-price">$. <span th:text="${totalAmount}">5000</span></div>
+        </div>
+
+        <form action="/booking/confirm" method="post">
+            <input type="hidden" name="flightId" th:value="${flight.flightId}">
+            
+            <th:block th:each="i : ${#numbers.sequence(0, seatNos.size() - 1)}">
+                <input type="hidden" name="seatNo" th:value="${seatNos[i]}">
+                <input type="hidden" name="pName" th:value="${pNames[i]}">
+                <input type="hidden" name="pPassport" th:value="${pPassports[i]}">
+                <input type="hidden" name="pAge" th:value="${pAges[i]}">
+                <input type="hidden" name="pClass" th:value="${pClasses[i]}">
+                <input type="hidden" name="pMeal" th:value="${pMeals[i]}">
+                <input type="hidden" name="pPrice" th:value="${pPrices != null ? pPrices[i] : 0}">
+            </th:block>
+
+            <button type="submit" class="btn-confirm">Pay & Confirm Booking 💳</button>
+        </form>
+
+    </div>
+
+</body>
+</html>

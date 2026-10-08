@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Flight Lookup | SkyAdmin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; padding: 30px;
+            background-image: url('/images/adminDash.jpg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+        }
+        
+        /* Row Highlighting for Search Results */
+        .highlighted-row { background-color: #e0f2fe !important; border-left: 5px solid #0ea5e9; }
+        
+        /* Cards Styling */
+        .search-card, .table-card { 
+            background: white; 
+            border-radius: 20px; 
+            padding: 25px; 
+            margin-bottom: 30px; 
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); 
+        }
+        
+        /* Seat Grid Styling (Plane Layout) */
+        .seat-grid { 
+            display: grid; 
+            grid-template-columns: repeat(6, 1fr); 
+            gap: 10px; 
+            justify-content: center; 
+            max-width: 320px; 
+            margin: 0 auto; 
+        }
+        .seat-box { 
+            width: 42px; 
+            height: 48px; 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 11px; 
+            font-weight: bold; 
+            color: white; 
+            transition: transform 0.2s;
+        }
+        .booked { background-color: #ef4444; box-shadow: 0 3px 0 #b91c1c; } /* Red */
+        .available { background-color: #22c55e; box-shadow: 0 3px 0 #15803d; } /* Green */
+        .row-gap { margin-bottom: 12px; }
+        
+        /* Custom Modal Tweaks */
+        .modal-content { border-radius: 25px; border: none; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
+        .stats-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+
+    <div class="search-card">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <h3 class="fw-bold text-primary m-0">
+                    <i class="fas fa-plane-departure me-2"></i> Flight Lookup
+                </h3>
+            </div>
+            <div class="col-md-8">
+                <form th:action="@{/admin/searchFlight}" method="get" class="d-flex gap-2">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" name="flightId" class="form-control border-start-0 shadow-none" 
+                               placeholder="Enter Flight ID (BST Search)..." required>
+                    </div>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">Find Flight</button>
+                    <a th:href="@{/admin}" class="btn btn-outline-secondary shadow-sm"><i class="fas fa-home"></i></a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <h5 class="fw-bold mb-4 text-secondary"><i class="fas fa-list me-2"></i> Scheduled Flights Overview</h5>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Flight ID</th>
+                        <th>Origin ➔ Destination</th>
+                        <th>Status</th>
+                        <th>Capacity</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="f : ${allFlights}" th:classappend="${f.flightId == highlightId} ? 'highlighted-row' : ''">
+                        <td><span class="fw-bold text-dark" th:text="${f.flightId}"></span></td>
+                        <td th:text="${f.source + ' ➔ ' + f.destination}"></td>
+                        <td>
+                            <span class="badge rounded-pill" 
+                                  th:classappend="${f.status.name() == 'SCHEDULED' ? 'bg-success' : 'bg-warning'}"
+                                  th:text="${f.status}"></span>
+                        </td>
+                        <td th:text="${f.capacity + ' Seats'}"></td>
+                        <td class="text-center">
+                            <a th:href="@{/admin/searchFlight(viewMapId=${f.flightId})}" class="btn btn-sm btn-dark px-3 shadow-sm">
+                                <i class="fas fa-th me-1"></i> View Population Map
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="text-center mt-4 mb-5">
+        <a th:href="@{/admin}" class="btn btn-secondary px-5 py-2 fw-bold shadow-sm" style="border-radius: 12px;">
+            <i class="fas fa-arrow-left me-2"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="modal fade" id="seatModal" th:classappend="${showModal} ? 'show d-block' : ''" 
+     tabindex="-1" th:style="${showModal} ? 'display:block' : 'display:none'">
+    
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content" th:if="${mapFlight != null}">
+            
+            <div class="modal-header border-0 px-4 pt-4">
+                <h5 class="modal-title fw-bold">
+                    <i class="fas fa-info-circle text-primary me-2"></i> 
+                    Occupancy: <span th:text="${mapFlight.flightId}"></span>
+                </h5>
+                <a th:href="@{/admin/searchFlight}" class="btn-close shadow-none"></a>
+            </div>
+
+            <div class="modal-body p-4">
+                
+                <div class="row g-2 text-center mb-4">
+                    <div class="col-4">
+                        <div class="stats-box">
+                            <small class="text-muted d-block small-text">Total</small>
+                            <span class="fw-bold h5 mb-0" th:text="${mapFlight.capacity}">0</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stats-box">
+                            <small class="text-danger d-block small-text">Booked</small>
+                            <span class="fw-bold h5 mb-0 text-danger" th:text="${bookedSeats.size()}">0</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stats-box">
+                            <small class="text-success d-block small-text">Available</small>
+                            <span class="fw-bold h5 mb-0 text-success" 
+                                  th:text="${mapFlight.capacity - bookedSeats.size()}">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-center gap-4 mb-4 small fw-bold text-muted">
+                    <span><i class="fas fa-square text-success me-1"></i> Available</span>
+                    <span><i class="fas fa-square text-danger me-1"></i> Booked</span>
+                </div>
+
+                <div class="p-3 bg-light rounded-4 shadow-sm border">
+                    <div th:each="rowNum : ${#numbers.sequence(1, mapFlight.capacity/6)}" class="row-gap">
+                        <div class="seat-grid">
+                            <div th:each="colChar : ${ {'A','B','C','D','E','F'} }" 
+                                 th:with="seatID=${rowNum + colChar}"
+                                 class="seat-box"
+                                 th:classappend="${#lists.contains(bookedSeats, seatID)} ? 'booked' : 'available'"
+                                 th:text="${seatID}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-light px-4 fw-bold" 
+                        onclick="window.location.href='/admin/searchFlight'">Close Map</button>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop fade show" th:if="${showModal}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,69 @@
+1-Admin
+admin_id (PK)
+username
+password
+
+2-Passenger
+passport_id (PK)
+full_name
+contact
+email (NULL)
+password (NULL)
+is_registered (BOOLEAN)
+
+3- Airline
+airline_id (PK)
+airline_name
+country
+contact
+
+4-Flight
+flight_id (PK)
+airline_id (FK → Airline.airline_id)
+source
+destination
+date
+time
+capacity
+price
+status
+
+
+5-Booking
+booking_id (PK)
+flight_id (FK)
+booking_owner_id (FK → Passenger)
+booking_date
+booking_status
+
+
+6-BookingPassenger
+bp_id (PK)
+booking_id (FK)
+passport_id (FK)
+seat_no
+
+7-Payment
+payment_id (PK)
+booking_id (FK)
+amount
+payment_method
+payment_date
+payment_status
+
+
+FINAL RELATIONSHIPS
+
+Airline (1) ───────── (M) Flight
+
+Flight (1) ────────── (M) Booking
+
+Passenger (1) ─────── (M) Booking
+           (Booking Owner)
+
+Booking (1) ───────── (M) BookingPassenger
+
+Passenger (1) ─────── (M) BookingPassenger
+           (Travel Passengers)
+
+Booking (1) ───────── (1) Payment

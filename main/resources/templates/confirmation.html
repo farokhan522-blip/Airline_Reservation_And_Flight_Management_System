@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Booking Status</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px;
+           
+            background-image: url('/images/confo.jpg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+        }
+        .card { background: white; padding: 40px; display: inline-block; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { color: #0056b3; }
+        a { text-decoration: none; color: white; background: #0056b3; padding: 10px 20px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1 th:text="${message}"></h1>
+        <br>
+        <a href="/user_dashboard">Go to Dashboard</a>
+    </div>
+</body>
+</html>

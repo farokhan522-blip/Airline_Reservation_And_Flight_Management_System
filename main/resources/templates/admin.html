@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>SkyAdmin Pro | Enterprise Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+    :root { 
+        --primary-color: #4361ee; 
+        --secondary-color: #3f37c9; 
+        --sidebar-bg: #0f172a; 
+        --card-bg: #ffffff; 
+        --bg-body: #f1f5f9; 
+    }
+
+    body { 
+        font-family: 'Inter', sans-serif; 
+        
+        /* ✨ FIX: Opacity ko 0.85 se kam karke 0.4 kar diya hai ✨ */
+        background-image: linear-gradient(rgba(243, 244, 249, 0.4), rgba(243, 244, 249, 0.4)), 
+                          url('/images/adminDash.jpg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+    }
+
+    /* Baki design wahi rahega */
+    .sidebar { height: 100vh; background-color: var(--sidebar-bg); color: #94a3b8; position: fixed; width: 260px; padding-top: 20px; z-index: 1000; }
+    .sidebar-brand { color: white; font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 40px; }
+    .sidebar a { padding: 15px 25px; text-decoration: none; color: #94a3b8; display: flex; align-items: center; border-left: 4px solid transparent; }
+    .sidebar a:hover, .sidebar a.active { color: white; background: rgba(255, 255, 255, 0.05); border-left: 4px solid var(--primary-color); }
+    .main-content { margin-left: 260px; padding: 30px; }
+    
+    /* Stats aur Containers ki styling */
+    .stat-card { background: var(--card-bg); border-radius: 16px; padding: 25px; box-shadow: 0 10px 30px rgba(67, 97, 238, 0.1); border: 1px solid rgba(67, 97, 238, 0.05); transition: 0.3s; }
+    .stat-card:hover { transform: translateY(-5px); }
+    .card-flights { border-bottom: 4px solid #4361ee; }
+    .card-airlines { border-bottom: 4px solid #7209b7; }
+    .card-bookings { border-bottom: 4px solid #4cc9f0; }
+    .stat-value { font-size: 32px; font-weight: 800; color: #1e293b; }
+    .table-custom-container { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-top: 30px; }
+    .btn-primary-custom { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3); }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-brand"><i class="fas fa-plane-departure"></i> SkyAdmin</div>
+    <a th:href="@{/admin}" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
+    <a href="#airlinesSection"><i class="fas fa-building"></i> Airlines</a>
+    <a href="#flightsSection"><i class="fas fa-plane"></i> Flights</a>
+    <a th:href="@{/logout}" style="margin-top: auto; color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+
+<div class="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h2 style="font-weight: 800; color: #0f172a;">Welcome back, Admin 👋</h2>
+            <p class="text-muted">Enterprise Flight Operations Management</p>
+        </div>
+        <div>
+            <form th:action="@{/admin/undo}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-outline-secondary me-2"><i class="fas fa-undo"></i> Undo Last</button>
+            </form>
+            <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addFlightModal">
+                <i class="fas fa-plus"></i> Schedule Flight
+            </button>
+            <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#reRouteModal">
+                <i class="fas fa-sync-alt"></i> Re-route Plane
+            </button>
+        </div>
+    </div>
+
+
+    <div th:if="${param.error != null and param.error[0] == 'DuplicateAircraft'}" 
+     class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+        <div>
+            <h5 class="fw-bold m-0">Action Failed!</h5>
+            <p class="m-0">This Aircraft ID already exists in the fleet. Please use the <b>"Re-route Plane"</b> button for existing aircrafts.</p>
+        </div>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+
+<div th:if="${param.error != null and param.error[0] == 'PlaneBusy'}" 
+     class="alert alert-warning alert-dismissible fade show border-0 shadow-sm mb-4">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-plane-slash fa-2x me-3"></i>
+        <div>
+            <h5 class="fw-bold m-0">Cannot Re-route!</h5>
+            <p class="m-0">This aircraft is currently <b>In The Air (Scheduled)</b>. Please wait for it to complete the flight.</p>
+        </div>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+
+
+<div th:if="${param.error != null and param.error[0] == 'UndoConflict'}" 
+     class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+        <div>
+            <h5 class="fw-bold mb-1">Undo Failed!</h5>
+            <p class="mb-0">Cannot restore flight because its <strong>Aircraft is now assigned to another flight</strong>. Please cancel the new flight first.</p>
+        </div>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+
+    <div th:if="${searchedPassenger}" class="alert alert-info alert-dismissible fade show p-4 border-0 shadow-sm mb-4" style="border-radius:15px; background:white;">
+        <h5 class="fw-bold text-primary"><i class="fas fa-user-check me-2"></i> Passenger Found</h5>
+        <p class="m-0">Name: <b th:text="${searchedPassenger.fullName}"></b> | Passport: <b th:text="${searchedPassenger.passportNumber}"></b> | Age: <b th:text="${searchedPassenger.age}"></b></p>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="stat-card card-flights">
+                <div class="stat-value" th:text="${flights.size()}">0</div>
+                <div class="stat-label fw-bold text-uppercase small" style="color: #64748b;">Active Flights</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card card-airlines">
+                <div class="stat-value" th:text="${airlines.size()}">0</div>
+                <div class="stat-label fw-bold text-uppercase small" style="color: #64748b;">Partner Airlines</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card card-bookings">
+                <div class="stat-value" th:text="${totalBookings}">0</div>
+                <div class="stat-label fw-bold text-uppercase small" style="color: #64748b;">Total Bookings</div>
+            </div>
+        </div>
+    </div>
+
+<div class="row g-4 mb-5">
+        <div class="col-12"><h5 class="fw-bold text-muted">System Operations & DSA Modules</h5></div>
+        
+        <div class="col-md-3">
+            <div class="stat-card border-0 shadow-sm text-center p-4 h-100" style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#passengerLookupModal">
+                <div class="mb-3 text-primary"><i class="fas fa-id-card fa-2x"></i></div>
+                <h6 class="fw-bold">Passenger Directory</h6>
+                <small class="text-muted">Lookup via HashMap</small>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <a th:href="@{/admin/searchFlight}" class="text-decoration-none text-dark h-100">
+                <div class="stat-card border-0 shadow-sm text-center p-4 h-100">
+                    <div class="mb-3 text-success"><i class="fas fa-search-location fa-2x"></i></div>
+                    <h6 class="fw-bold">Flight Lookup</h6>
+                    <small class="text-muted">Search via BST Engine</small>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a th:href="@{/admin/flights/completed}" class="text-decoration-none text-dark h-100">
+                <div class="stat-card border-0 shadow-sm text-center p-4 h-100">
+                    <div class="mb-3 text-success"><i class="fas fa-check-circle fa-2x"></i></div>
+                    <h6 class="fw-bold">Flight History</h6>
+                    <small class="text-muted">View Completed Flights</small>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a th:href="@{/admin/flights/cancelled}" class="text-decoration-none text-dark h-100">
+                <div class="stat-card border-0 shadow-sm text-center p-4 h-100">
+                    <div class="mb-3 text-danger"><i class="fas fa-plane-slash fa-2x"></i></div>
+                    <h6 class="fw-bold">Cancelled Flights</h6>
+                    <small class="text-muted">Terminated Schedules</small>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a th:href="@{/admin/passengers/registered}" class="text-decoration-none text-dark h-100">
+                <div class="stat-card border-0 shadow-sm text-center p-4 h-100">
+                    <div class="mb-3 text-warning"><i class="fas fa-user-minus fa-2x"></i></div>
+                    <h6 class="fw-bold">Registered Passengers</h6>
+                    <small class="text-muted">Logged in Passengers</small>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a href="#" class="text-decoration-none text-dark h-100" onclick="alert('Feature: Graph Algorithms (BFS) implementation coming soon!')">
+                <div class="stat-card border-0 shadow-sm text-center p-4 h-100">
+                    <div class="mb-3" style="color: #6f42c1;"><i class="fas fa-route fa-2x"></i></div>
+                    <h6 class="fw-bold">Smart Route Finder</h6>
+                    <small class="text-muted">Graph Algorithms (BFS)</small>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+    <a th:href="@{/admin/manifest/flights}" class="text-decoration-none text-dark h-100">
+        <div class="stat-card border-0 shadow-sm text-center p-4 h-100">
+            <div class="mb-3" style="color: #20c997;"><i class="fas fa-users-viewfinder fa-2x"></i></div>
+            <h6 class="fw-bold">Flight Manifests</h6>
+            <small class="text-muted">Passenger Linked Lists</small>
+        </div>
+    </a>
+</div>
+
+        <div class="col-md-3">
+            <a th:href="@{/admin/queue/view}" class="text-decoration-none text-dark h-100">
+                <div class="stat-card border-0 shadow-sm text-center p-4 h-100">
+                    <div class="mb-3" style="color: #fd7e14;"><i class="fas fa-user-clock fa-2x"></i></div>
+                    <h6 class="fw-bold">Waitlist Queue</h6>
+                    <small class="text-muted">FIFO Queue Management</small>
+                </div>
+            </a>
+        </div>
+
+    </div>
+
+    <div id="airlinesSection" class="table-custom-container mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold m-0">🏢 Partner Airlines</h5>
+            <button class="btn btn-sm btn-dark px-3" data-bs-toggle="modal" data-bs-target="#addAirlineModal">Add Airline</button>
+        </div>
+        <table class="table table-hover">
+            <thead class="table-light"><tr><th>ID</th><th>Airline Name</th><th>Country</th></tr></thead>
+            <tbody>
+                <tr th:each="a : ${airlines}">
+                    <td th:text="${a.airlineID}" class="fw-bold text-primary"></td>
+                    <td th:text="${a.name}"></td>
+                    <td th:text="${a.country}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="flightsSection" class="table-custom-container mb-5">
+        <h5 class="fw-bold mb-4">✈️ Current Flight Schedule</h5>
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Flight ID</th>
+                    <th>Airline</th>
+                    <th>Route</th>
+                    <th>Date/Time</th>
+                    <th>Status</th>
+                    <th>Actions</th> </tr>
+            </thead>
+            <tbody>
+                <tr th:each="f : ${flights}">
+                    <td th:text="${f.flightId}" class="fw-bold"></td>
+                    <td th:text="${f.airline != null ? f.airline.name : 'N/A'}"></td>
+                    <td><b th:text="${f.source}"></b> ➔ <b th:text="${f.destination}"></b></td>
+                    <td th:text="${f.date} + ' at ' + ${f.time}"></td>
+                    <td>
+                        <span class="badge" th:classappend="${f.status.name() == 'COMPLETED' ? 'bg-success' : 'bg-primary'}" th:text="${f.status}"></span>
+                    </td>
+                    <td class="text-nowrap">
+                        <form th:action="@{/admin/complete}" method="post" style="display:inline;">
+                            <input type="hidden" name="flightId" th:value="${f.flightId}"/>
+                            <button type="submit" class="btn btn-sm btn-outline-success me-1" title="Mark Completed">
+                                <i class="fas fa-check"></i> Complete
+                            </button>
+                        </form>
+
+                        <form th:action="@{/admin/delete}" method="post" style="display:inline;">
+                            <input type="hidden" name="id" th:value="${f.flightId}"/>
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancel Flight" onclick="return confirm('Are you sure you want to cancel this flight?');">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="passengerLookupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Passenger Directory Search</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{/admin/searchPassenger}" method="get">
+                <div class="modal-body p-4">
+                    <label class="form-label fw-bold">Enter Passport Number</label>
+                    <input type="text" name="passport" class="form-control" placeholder="e.g., AB123456" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary w-100">Search HashMap</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addFlightModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-primary text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fas fa-plus-circle me-2"></i> Schedule New Flight</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{/admin/add}" method="post">
+                <input type="hidden" name="mode" value="NEW">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Flight ID</label>
+                            <input type="text" name="flightId" class="form-control" placeholder="e.g., PK-301" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Select Airline</label>
+                            <select name="airlineId" class="form-select" required>
+                                <option value="" disabled selected>Choose Airline</option>
+                                <option th:each="a : ${airlines}" th:value="${a.airlineID}" th:text="${a.name}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">From (Source)</label>
+                            <input type="text" name="source" class="form-control" placeholder="Karachi" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">To (Destination)</label>
+                            <input type="text" name="destination" class="form-control" placeholder="Lahore" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Date</label>
+                            <input type="date" name="date" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Time</label>
+                            <input type="time" name="time" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Aircraft ID</label>
+                            <input type="text" name="aircraftId" class="form-control" placeholder="Boeing 777" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Total Capacity</label>
+                            <input type="number" name="capacity" class="form-control" placeholder="e.g., 60" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Base Price (RS)</label>
+                            <input type="number" name="basePrice" class="form-control" placeholder="e.g. 500" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-5 fw-bold shadow-sm">Schedule Flight</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addAirlineModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold">🏢 Add Partner Airline</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{/admin/addAirline}" method="post">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Airline ID</label>
+                        <input type="text" name="airlineID" class="form-control" placeholder="e.g., PIA" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Airline Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g., Pakistan International" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Meal Policy</label>
+                        <select name="mealPolicy" class="form-select" required>
+                            <option value="" disabled selected>Select Meal Policy</option>
+                            <option th:each="policy : ${mealPolicies}" 
+                                    th:value="${policy}" 
+                                    th:text="${policy}"></option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Origin Country</label>
+                        <input type="text" name="country" class="form-control" placeholder="e.g., Pakistan" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="submit" class="btn btn-dark w-100 py-2 fw-bold shadow-sm">Register Airline</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="reRouteModal" tabindex="-1" 
+     th:classappend="${showReRouteModal} ? 'show d-block' : ''"
+     th:style="${showReRouteModal} ? 'background: rgba(0,0,0,0.5);' : ''">
+     
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            
+            <div class="modal-header bg-success text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fas fa-plane-arrival me-2"></i> Re-route Aircraft</h5>
+                <a th:if="${showReRouteModal}" href="/admin" class="btn-close btn-close-white"></a>
+                <button th:unless="${showReRouteModal}" type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-4">
+
+                <div th:if="${preFillData == null}">
+                    <form th:action="@{/admin/loadPlaneData}" method="post" class="p-4 bg-light rounded border text-center">
+                        <i class="fas fa-search-location fa-3x text-success mb-3"></i>
+                        <h6 class="fw-bold text-muted">Select an Aircraft to Re-Schedule</h6>
+                        <div class="input-group mt-3">
+                            <select name="selectedAircraftId" class="form-select" required>
+                                <option value="" disabled selected>Select Available Aircraft...</option>
+                                <option th:each="entry : ${freeAircraftsMap}" 
+                                        th:value="${entry.key}" 
+                                        th:text="${entry.key} + ' (Cap: ' + ${entry.value} + ')'"></option>
+                            </select>
+                            <button type="submit" class="btn btn-success px-4">Load Plane</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div th:if="${preFillData != null}">
+                    
+                    <form th:action="@{/admin/add}" method="post">
+                        
+                        <input type="hidden" name="mode" value="REROUTE">
+                        
+                        <input type="hidden" name="economyBaggage" th:value="${preFillData.economyBaggage}">
+                        <input type="hidden" name="businessBaggage" th:value="${preFillData.businessBaggage}">
+                        <input type="hidden" name="firstClassBaggage" th:value="${preFillData.firstClassBaggage}">
+                        
+                        <input type="hidden" name="businessPriceFactor" th:value="${preFillData.businessPriceFactor}">
+                        <input type="hidden" name="firstClassPriceFactor" th:value="${preFillData.firstClassPriceFactor}">
+
+                        <div class="alert alert-success d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Plane Loaded:</strong> 
+                                <span th:text="${selectedAircraftId}"></span> 
+                                <span class="badge bg-dark ms-2" th:text="'Capacity: ' + ${preFillData.capacity}"></span>
+                            </div>
+                            <a href="/admin" class="btn btn-sm btn-outline-success bg-white">Change</a>
+                        </div>
+
+                        <div class="row g-3">
+                            <input type="hidden" name="aircraftId" th:value="${selectedAircraftId}">
+                            <input type="hidden" name="capacity" th:value="${preFillData.capacity}">
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">New Flight ID</label>
+                                <input type="text" name="flightId" class="form-control" placeholder="PK-###" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold">Airline</label>
+                                <select name="airlineId" class="form-select" required>
+                                    <option th:each="a : ${airlines}" th:value="${a.airlineID}" th:text="${a.name}"></option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6"><label>From</label><input type="text" name="source" class="form-control" required></div>
+                            <div class="col-md-6"><label>To</label><input type="text" name="destination" class="form-control" required></div>
+                            
+                            <div class="col-md-4"><label>Date</label><input type="date" name="date" class="form-control" required></div>
+                            <div class="col-md-4"><label>Time</label><input type="time" name="time" class="form-control" required></div>
+                            <div class="col-md-4"><label>Base Price ($)</label><input type="number" name="basePrice" class="form-control" required></div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-success w-100 fw-bold shadow-sm py-2">
+                                <i class="fas fa-paper-plane me-2"></i> Confirm Schedule
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Cancelled Archives | SkyAdmin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .archive-card { 
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: slideUp 0.6s ease-out;
+        }
+        .archive-card:hover { transform: scale(1.02); background: rgba(255, 255, 255, 0.07); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .status-badge { background: #ef4444; color: white; padding: 5px 15px; border-radius: 30px; font-size: 11px; font-weight: bold; }
+        .btn-back { color: #94a3b8; text-decoration: none; font-weight: 600; transition: 0.3s; }
+        .btn-back:hover { color: white; }
+    </style>
+</head>
+<body class="p-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <a href="/admin" class="btn-back"><i class="fas fa-arrow-left me-2"></i> Back to Dashboard</a>
+                <h2 class="fw-bold mt-3">Terminated Flight Archives</h2>
+            </div>
+            <i class="fas fa-plane-slash fa-3x text-danger opacity-50"></i>
+        </div>
+
+        <div class="row g-4">
+            <div th:each="f : ${flights}" class="col-md-6">
+                <div class="archive-card p-4">
+                    <div class="d-flex justify-content-between">
+                        <h4 th:text="${f.flightId}" class="fw-bold text-primary"></h4>
+                        <span class="status-badge">CANCELLED</span>
+                    </div>
+                    <hr class="opacity-10">
+                    <div class="row text-center">
+                        <div class="col">
+                            <small class="text-muted d-block">ORIGIN</small>
+                            <span th:text="${f.source}" class="fs-5 fw-bold"></span>
+                        </div>
+                        <div class="col-auto align-self-center"><i class="fas fa-long-arrow-alt-right text-muted"></i></div>
+                        <div class="col">
+                            <small class="text-muted d-block">DESTINATION</small>
+                            <span th:text="${f.destination}" class="fs-5 fw-bold"></span>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 bg-dark rounded-3">
+                        <small class="text-muted">Termination Timestamp: </small>
+                        <span th:text="${f.date} + ' ' + ${f.time}" class="small"></span>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${#lists.isEmpty(flights)}" class="text-center py-5">
+                <h4 class="text-muted">No cancelled flights found in memory.</h4>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

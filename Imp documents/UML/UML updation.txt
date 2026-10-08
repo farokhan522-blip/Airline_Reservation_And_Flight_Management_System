@@ -1,0 +1,280 @@
+
+<<enumeration>> TravelClass
+---------------------------
+ECONOMY
+BUSINESS
+FIRST
+
+
+
+<<enumeration>> MealType
+------------------------
+VEG
+NON_VEG
+NONE
+
+
+
+
+<<enumeration>> BookingStatus
+-----------------------------
+PENDING
+CONFIRMED
+CANCELLED
+
+
+
+
+<<enumeration>> PaymentStatus
+-----------------------------
+SUCCESS
+FAILED
+PENDING
+
+
+
+
+
+<<enumeration>> MealPolicy
+--------------------------
+FREE
+PAID
+NOT_AVAILABLE
+
+
+
+
+
+Admin
+----------------
+- adminID: int
+- username: String
+- password: String
+
+
+Passenger
+----------------
+- passportID: String
+- fullName: String
+- contact: String
+- email: String
+- password: String
+- isRegistered: boolean
+
++ verifyPassword(pass: String): boolean
+
+
+
+
+
+Airline
+----------------
+- airlineID: String
+- name: String
+- country: String
+
+- economyPriceFactor: double
+- businessPriceFactor: double
+- firstClassPriceFactor: double
+
+- economyBaggage: double
+- businessBaggage: double
+- firstClassBaggage: double
+
+- mealPolicy: MealPolicy
+
+
+
+
+
+Flight
+----------------
+- flightID: String
+- source: String
+- destination: String
+- date: String
+- time: String
+- capacity: int
+- basePrice: double
+- status: String
+
+- airline: Airline
+- seatMap: SeatMap
+- waitList: WaitlistQueue
+- passengers: PassengerLinkedList
+
++ isFull(): boolean
++ addToWaitlist(p: Passenger): void
++ promoteFromWaitlist(): Passenger
+
+
+SeatMap
+----------------
+- seats: int[][]
+- rows: int
+- cols: int
+
++ isAvailable(r, c): boolean
++ bookSeat(r, c): boolean
++ freeSeat(r, c): void
+
+
+
+Booking
+----------------
+- bookingID: int
+- bookingDate: String
+- status: BookingStatus
+
+- flight: Flight
+- owner: Passenger
+- payment: Payment
+
++ cancel(): void
++ getDetails(): String
+
+
+
+
+
+BookingPassenger
+----------------
+- seatNo: String
+- travelClass: TravelClass
+- baggageWeight: double
+- mealSelected: MealType
+
+- booking: Booking
+- passenger: Passenger
+
+
+
+
+Payment
+----------------
+- paymentID: int
+- amount: double
+- paymentDate: String
+- status: PaymentStatus
+
+
+
+
+
+FlightBST
+----------------
+- root: FlightNode
+
++ insert(f: Flight): void
++ search(flightID: String): Flight
++ inOrderTraversal(): void
+
+
+
+
+PassengerHashTable
+----------------
+- table: PassengerNode[]
+- size: int
+
++ put(key: String, p: Passenger): void
++ get(key: String): Passenger
+
+
+
+
+WaitlistQueue
+----------------
+- front: Node
+- rear: Node
+
++ enqueue(p: Passenger): void
++ dequeue(): Passenger
+
+
+
+
+UndoStack
+----------------
+- top: Node
+
++ push(action: String): void
++ pop(): String
+
+
+
+PassengerLinkedList
+----------------
+- head: Node
+
++ add(p: Passenger): void
++ displayAll(): void
+
+
+
+PassengerService
+----------------
+- userMap: PassengerHashTable
+
++ register(p: Passenger): void
++ login(email, pass): boolean
+
+
+FlightService
+----------------
+- flightTree: FlightBST
+
++ addFlight(f: Flight): void
++ searchFlight(id: String): Flight
+
+
+BookingService
+----------------
++ createBooking(owner: Passenger, flight: Flight, passengers: List<Passenger>): void
+
++ calculateTicketPrice(bp: BookingPassenger): double
+
+
+AdminService
+----------------
+- history: UndoStack
+
++ deleteFlight(id: String): void
++ undoAction(): void
+
+
+
+PassengerDAO
+FlightDAO
+BookingDAO
+PaymentDAO
+DBConnection
+
+
+
+ FINAL UML RELATIONSHIPS (DRAW EXACTLY THIS)
+
+
+Airline (1) ──── (M) Flight
+
+Flight ♦── SeatMap
+Flight ♦── WaitlistQueue
+Flight ♦── PassengerLinkedList
+
+FlightService ◇── FlightBST
+PassengerService ◇── PassengerHashTable
+AdminService ◇── UndoStack
+
+Passenger (1) ──── (M) Booking        [owner]
+
+Booking (1) ──── (M) BookingPassenger
+Passenger (1) ──── (M) BookingPassenger
+
+Booking (1) ──── (1) Payment
+
+BookingPassenger ─── TravelClass (ENUM)
+BookingPassenger ─── MealType (ENUM)
+
+Booking ─── BookingStatus (ENUM)
+Payment ─── PaymentStatus (ENUM)
+Airline ─── MealPolicy (ENUM)

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Passenger Registration</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center" style="height: 100vh;">
+
+<div class="card shadow p-4" style="width: 400px;">
+    <h3 class="text-center mb-4">📝 Register</h3>
+    
+    <form th:action="@{/register}" method="post">
+    <div class="row">
+        <div class="col-md-12 mb-3">
+            <label class="form-label small fw-bold">Passport Number</label>
+            <input type="text" name="passportId" class="form-control" required placeholder="e.g. A1234567">
+        </div>
+        <div class="col-md-12 mb-3">
+            <label class="form-label small fw-bold">Full Name</label>
+            <input type="text" name="fullName" class="form-control" required placeholder="Ali Khan">
+        </div>
+        
+        <div class="col-md-12 mb-3">
+            <label class="form-label small fw-bold">Age</label>
+            <input type="number" name="age" class="form-control" required placeholder="e.g. 25" min="1" max="120">
+        </div>
+        
+        <div class="col-md-12 mb-3">
+            <label class="form-label small fw-bold">Email Address</label>
+            <input type="email" name="email" class="form-control" required placeholder="ali@example.com">
+        </div>
+        <div class="col-md-12 mb-4">
+            <label class="form-label small fw-bold">Create Password</label>
+            <input type="password" name="password" class="form-control" required>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">Create My Account</button>
+</form>
+    
+    <div class="text-center mt-3">
+        <a href="/login">Already have an account? Login</a>
+    </div>
+</div>
+
+</body>
+</html>

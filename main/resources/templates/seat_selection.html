@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Select Seats</title>
+    <style>
+        /* (CSS bilkul same rahegi, usay repeat nahi kar raha space bachane k liye) */
+        body { font-family: 'Segoe UI', sans-serif; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; background: url('/images/selectseat.jfif') no-repeat center center fixed; background-size: cover; background-color: #2c3e50; }
+        body::before { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: -1; }
+        .plane-wrapper { position: relative; filter: drop-shadow(0px 20px 30px rgba(0,0,0,0.6)); margin-top: 60px; margin-bottom: 50px; }
+        .fuselage { background: #ecf0f1; border: 5px solid #bdc3c7; border-radius: 200px 200px 50px 50px; padding: 120px 40px 80px 40px; position: relative; z-index: 2; min-width: 360px; }
+        .fuselage::before { content: ''; position: absolute; top: 50px; left: 50%; transform: translateX(-50%); width: 120px; height: 50px; background: #34495e; border-radius: 40% 40% 15% 15%; border: 4px solid #95a5a6; }
+        .wings { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); width: 1100px; height: 350px; z-index: 1; display: flex; justify-content: space-between; pointer-events: none; }
+        .wing-left, .wing-right { width: 42%; height: 100%; background: #95a5a6; border: 4px solid #7f8c8d; }
+        .wing-left { clip-path: polygon(100% 10%, 0 30%, 20% 100%, 100% 70%); border-right: none; margin-right: -20px;}
+        .wing-right { clip-path: polygon(0 10%, 100% 30%, 80% 100%, 0 70%); border-left: none; margin-left: -20px; }
+        .tail-area { width: 300px; height: 120px; position: absolute; bottom: -90px; left: 50%; transform: translateX(-50%); z-index: 1; display: flex; justify-content: center; }
+        .tail-h-left, .tail-h-right { width: 100px; height: 60px; background: #95a5a6; border: 3px solid #7f8c8d; position: absolute; bottom: 30px; }
+        .tail-h-left { left: -60px; clip-path: polygon(100% 0, 0 40%, 30% 100%, 100% 80%); }
+        .tail-h-right { right: -60px; clip-path: polygon(0 0, 100% 40%, 70% 100%, 0 80%); }
+        .tail-v { width: 60px; height: 140px; background: #ecf0f1; border: 4px solid #bdc3c7; position: absolute; bottom: 0; clip-path: polygon(20% 0, 80% 0, 100% 100%, 0% 100%); border-bottom: none; }
+        .row { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; }
+        .seat:nth-child(3) { margin-right: 30px; } 
+        .seat { width: 40px; height: 50px; border-radius: 8px 8px 12px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; transition: all 0.2s; color: #555; }
+        .seat:hover:not(.booked) { margin-top: -2px; transform: scale(1.1); }
+        .seat-first { background: #f1c40f; border: 2px solid #f39c12; box-shadow: 0 3px 0 #d35400; color: #fff; }
+        .seat-business { background: #9b59b6; border: 2px solid #8e44ad; box-shadow: 0 3px 0 #6c3483; color: #fff; }
+        .seat-economy { background: #dff9fb; border: 2px solid #81ecec; box-shadow: 0 3px 0 #00cec9; color: #7f8c8d; }
+        .seat.booked { background: #e74c3c !important; color: white !important; border-color: #c0392b !important; cursor: not-allowed; box-shadow: none !important; opacity: 0.6; }
+        .seat.selected { background: #2ecc71 !important; color: white !important; border-color: #27ae60 !important; box-shadow: 0 3px 0 #219150 !important; transform: scale(1.1); }
+        .legend-box { position: fixed; bottom: 240px; right: 40px; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; backdrop-filter: blur(5px); z-index: 100; width: 200px; text-align: left; border: 1px solid rgba(255,255,255,0.2); }
+        .legend-item { display: flex; align-items: center; margin-bottom: 8px; font-size: 13px; font-weight: 500; }
+        .color-box { width: 18px; height: 18px; border-radius: 4px; margin-right: 10px; border: 1px solid #ddd; }
+        .box-gold { background: #f1c40f; } .box-purple { background: #9b59b6; } .box-blue { background: #dff9fb; } .box-red { background: #e74c3c; } .box-green { background: #2ecc71; }
+        .controls { background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; position: fixed; bottom: 30px; right: 40px; text-align: center; backdrop-filter: blur(5px); z-index: 100; width: 200px; border: 1px solid rgba(255,255,255,0.2); }
+        .btn-pay { background: #f1c40f; border: none; padding: 12px 20px; font-weight: bold; font-size: 16px; cursor: pointer; border-radius: 5px; color: #2c3e50; transition: 0.3s; width: 100%; }
+        .btn-pay:hover { background: #f39c12; }
+    </style>
+</head>
+<body>
+
+    <h2 style="margin-top: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Flight: <span th:text="${flight.flightId}"></span> | Select Seats</h2>
+    <p style="text-shadow: 0 1px 2px rgba(0,0,0,0.5);">Capacity: <span th:text="${flight.capacity}"></span> Seats</p>
+
+    <div class="layout-container">
+        <div class="plane-wrapper">
+            <div class="wings"><div class="wing-left"></div><div class="wing-right"></div></div>
+            <div class="fuselage"><div id="seatsMap"></div></div>
+            <div class="tail-area"><div class="tail-h-left"></div><div class="tail-v"></div><div class="tail-h-right"></div></div>
+        </div>
+    </div>
+
+    <div class="legend-box">
+        <div class="legend-item"><div class="color-box box-gold"></div> First Class</div>
+        <div class="legend-item"><div class="color-box box-purple"></div> Business</div>
+        <div class="legend-item"><div class="color-box box-blue"></div> Economy</div>
+        <hr style="border-color: rgba(255,255,255,0.2); margin: 5px 0;">
+        <div class="legend-item"><div class="color-box box-green"></div> Selected</div>
+        <div class="legend-item"><div class="color-box box-red"></div> Booked</div>
+    </div>
+
+    <div class="controls">
+        <h3 style="margin: 0 0 10px 0; font-size: 18px;">Selected Seats</h3>
+        <form action="/booking/passenger-details" method="POST" id="bookingForm">
+            <input type="hidden" name="flightId" th:value="${flight.flightId}">
+            <input type="text" id="selectedSeatsDisplay" readonly style="background:transparent; border:none; color:white; font-size:16px; text-align:center; width: 100%; margin-bottom: 10px;" placeholder="No seats selected">
+            <input type="hidden" id="realSelectedSeats">
+            <button type="button" class="btn-pay" onclick="submitBooking()">Next: Enter Details</button>
+        </form>
+    </div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const bookedSeatsList = /*[[${bookedSeats}]]*/ []; 
+    const totalCapacity = /*[[${flight.capacity}]]*/ 60;
+    
+    // 👇 Controller se values aa rahi hain (Generic)
+    const firstClassLimit = /*[[${firstClassLimit}]]*/ 2; 
+    const businessLimit = /*[[${businessClassLimit}]]*/ 5;   
+    /*]]>*/
+
+    const container = document.getElementById('seatsMap');
+    const selectedSeatsSet = new Set(); 
+    const totalRows = Math.ceil(totalCapacity / 6);
+    const seatLetters = ['A', 'B', 'C', 'D', 'E', 'F']; 
+
+    for (let i = 1; i <= totalRows; i++) {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'row';
+
+        // Row Check logic
+        let sectionClass = 'seat-economy';
+        if (i <= firstClassLimit) sectionClass = 'seat-first';
+        else if (i <= businessLimit) sectionClass = 'seat-business';
+
+        seatLetters.forEach(char => {
+            const seatNo = i + char; 
+            const seat = document.createElement('div');
+            seat.className = `seat ${sectionClass}`; 
+            seat.innerText = seatNo;
+
+            if (bookedSeatsList && bookedSeatsList.includes(seatNo)) {
+                seat.classList.add('booked'); seat.title = "Already Booked";
+            } else {
+                seat.onclick = () => {
+                    if (seat.classList.contains('selected')) {
+                        seat.classList.remove('selected'); selectedSeatsSet.delete(seatNo);
+                    } else {
+                        seat.classList.add('selected'); selectedSeatsSet.add(seatNo);
+                    }
+                    updateForm();
+                };
+            }
+            rowDiv.appendChild(seat);
+        });
+        container.appendChild(rowDiv);
+    }
+
+    function updateForm() {
+        const seatsArr = Array.from(selectedSeatsSet).sort();
+        document.getElementById('selectedSeatsDisplay').value = seatsArr.length > 0 ? seatsArr.join(', ') : '';
+        document.getElementById('selectedSeatsDisplay').placeholder = seatsArr.length > 0 ? '' : 'No seats selected';
+    }
+
+    function submitBooking() {
+        if (selectedSeatsSet.size === 0) { alert("Please select at least one seat!"); return; }
+        const form = document.getElementById('bookingForm');
+        document.querySelectorAll('.seat-input-hidden').forEach(e => e.remove());
+        selectedSeatsSet.forEach(seat => {
+            const input = document.createElement('input');
+            input.type = 'hidden'; input.name = 'selectedSeats'; input.value = seat; input.className = 'seat-input-hidden';
+            form.appendChild(input);
+        });
+        form.submit();
+    }
+</script>
+</body>
+</html>

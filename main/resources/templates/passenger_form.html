@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Passenger Details | SkyAdmin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; margin: 0; padding: 0; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding-top: 40px; padding-bottom: 40px; 
+            background-image: url('/images/bp.jpg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+        }
+        
+        .container { background: rgba(255, 255, 255, 0.95); width: 750px; max-width: 95%; border-radius: 20px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); backdrop-filter: blur(10px); }
+        h2 { text-align: center; color: #2d3436; margin-bottom: 5px; font-weight: 600; }
+        .flight-info { text-align: center; color: #636e72; margin-bottom: 30px; font-size: 14px; letter-spacing: 1px; }
+        .seat-card { background: #fff; border: 1px solid #dfe6e9; border-left: 6px solid #6c5ce7; border-radius: 10px; padding: 25px; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: transform 0.3s ease; }
+        .seat-header { font-size: 18px; font-weight: bold; color: #6c5ce7; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .ticket-badge { background: #a29bfe; color: white; font-size: 12px; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+        .input-group { margin-bottom: 15px; } .row { display: flex; gap: 20px; } .col { flex: 1; }
+        label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 500; color: #2d3436; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #f1f2f6; border-radius: 8px; font-size: 14px; outline: none; box-sizing: border-box; transition: 0.3s; background: #fdfdfd; font-family: 'Poppins', sans-serif; }
+        input:focus, select:focus { border-color: #6c5ce7; background: #fff; box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1); }
+        .btn-proceed { width: 100%; padding: 18px; background: linear-gradient(45deg, #6c5ce7, #a29bfe); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 10px 20px rgba(108, 92, 231, 0.3); transition: all 0.3s ease; margin-top: 10px; }
+        .infant-note { font-size: 11px; color: #e67e22; margin-top: 5px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Passenger Details</h2>
+        <p class="flight-info">FLIGHT ID: <b th:text="${flight.flightId}">PK-101</b> | Filling Details for <span th:text="${seatDetails.size()}"></span> Seat(s)</p>
+
+        <form th:action="@{/booking/payment-summary}" method="post">
+            <input type="hidden" name="flightId" th:value="${flight.flightId}">
+
+            <div th:each="info, iterStat : ${seatDetails}" class="seat-card">
+                
+                <div class="seat-header">
+                    <div>
+                        <span class="icon">💺</span> Seat No: <b th:text="${info.seatNo}"></b>
+                        <input type="hidden" name="seatNo" th:value="${info.seatNo}">
+                    </div>
+                    <span class="ticket-badge" 
+                          th:style="${info.travelClass.name() == 'FIRSTCLASS' ? 'background:#f1c40f' : (info.travelClass.name() == 'BUSINESS' ? 'background:#9b59b6' : 'background:#a29bfe')}"
+                          th:text="${info.travelClass}">ECONOMY</span>
+                </div>
+
+                <div class="row">
+                    <div class="col" style="flex: 2;">
+                        <label>Full Name</label>
+                        <input type="text" name="pName" required 
+                               th:value="${iterStat.index == 0 ? currentUser.fullName : ''}" 
+                               placeholder="Name as on Passport">
+                    </div>
+                    <div class="col">
+                        <label>Age</label>
+                        <input type="number" name="pAge" required min="0" max="120" 
+                               th:value="${iterStat.index == 0 ? currentUser.age : ''}"
+                               placeholder="Age">
+                        <div class="infant-note">Age 0-2: No charges, travels on Lap.</div>
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-top: 15px;">
+                    <label>Passport Number</label>
+                    <input type="text" name="pPassport" required 
+                           th:value="${iterStat.index == 0 ? currentUser.passportNumber : ''}"
+                           pattern="^[a-zA-Z0-9]{7,12}$" 
+                           title="Please enter a valid alphanumeric Passport Number (7-12 characters)."
+                           placeholder="Passport No (e.g. AB123456)">
+                </div>
+                
+                <div class="row">
+                    <div class="col">
+                        <label>Meal Preference</label>
+                        <select name="pMeal">
+                            <option th:each="meal : ${mealTypes}" th:value="${meal}" th:text="${meal}"></option>
+                        </select>
+                    </div>
+                    
+                    <div class="col">
+                        <label>Ticket Class</label>
+                        <input type="text" readonly th:value="${info.travelClass}" name="pClass" style="background-color: #f1f2f6;">
+                    </div>
+
+                    <div class="col">
+                        <label>Standard Fare</label>
+                        <input type="text" readonly th:value="${'$' + info.price}" style="background-color: #f1f2f6; font-weight: bold; color: #2ecc71;">
+                    </div>
+                </div>
+            </div> 
+            
+            <button type="submit" class="btn-proceed">Review Summary & Pay ➝</button>
+            <p style="text-align: center; font-size: 12px; color: #636e72; margin-top: 15px;">
+                Final fare including infant discounts will be calculated on the next page.
+            </p>
+        </form> 
+    </div>
+
+</body>
+</html>

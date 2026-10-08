@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Search Flights | SkyTravel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            /* ✨ FIX: White linear-gradient hata diya gaya hai ✨ */
+            background-image: url('/images/passearch.jpg');
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+
+        /* Cards ko thora transparent (Glass effect) rakha hai taake piche se image dikhe */
+        .search-card { 
+            border-radius: 15px; 
+            border: none; 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(8px); 
+        }
+
+        .flight-card { 
+            border-radius: 12px; 
+            border: none; 
+            transition: transform 0.2s; 
+            border-left: 5px solid #6c757d; 
+            background: rgba(255, 255, 255, 0.9); 
+        }
+
+        .flight-card:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2); 
+        }
+
+        .route-line { 
+            border-top: 2px dashed #adb5bd; 
+            width: 50px; 
+            display: inline-block; 
+            vertical-align: middle; 
+            margin: 0 10px; 
+        }
+        
+        /* Optimized Route Styling */
+        .smart-box { 
+            background: rgba(238, 242, 255, 0.9); 
+            border: 2px solid #4361ee; 
+            border-radius: 15px; 
+            padding: 25px; 
+            margin-bottom: 30px; 
+            backdrop-filter: blur(5px);
+        }
+
+        .match-highlight { color: #0d6efd !important; text-shadow: 0px 0px 1px #0d6efd; }
+        .card-highlight { border-left: 5px solid #0d6efd !important; background-color: rgba(240, 248, 255, 0.9) !important; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold text-primary" style="text-shadow: 1px 1px 2px white;">
+            <i class="fas fa-search-location me-2"></i>Find Your Journey
+        </h2>
+        <p class="fw-bold" style="color: #333; text-shadow: 1px 1px 1px white;">Direct searching via BST | Optimized routing via Dijkstra</p>
+    </div>
+
+    <div class="card p-4 shadow-lg search-card mb-5">
+        <form action="/search" method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label fw-bold">From</label>
+                <input type="text" name="source" class="form-control form-control-lg" th:value="${searchSource}" placeholder="Source City">
+            </div>
+            <div class="col-md-5">
+                <label class="form-label fw-bold">To</label>
+                <input type="text" name="destination" class="form-control form-control-lg" th:value="${searchDest}" placeholder="Destination City">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow">Search</button>
+            </div>
+        </form>
+    </div>
+
+    <div th:if="${isSmartSearch}" class="smart-box shadow-sm">
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h4 class="fw-bold text-primary"><i class="fas fa-magic me-2"></i>Most Optimized Route Found</h4>
+                <p class="text-muted m-0 font-italic">Our Dijkstra Engine calculated the cheapest path using connecting flights.</p>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-primary px-3 py-2 fs-6 shadow-sm" th:text="'Total Fare: $' + ${totalCost}"></span>
+            </div>
+        </div>
+        
+        <div th:each="f : ${flights}" class="card mb-3 border-0 shadow-sm" style="border-left: 5px solid #4361ee !important; background: rgba(255,255,255,0.8);">
+            <div class="card-body py-3">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <span class="badge bg-light text-dark mb-2" th:text="${f.flightId}"></span>
+                        <div class="d-flex align-items-center">
+                            <h5 class="mb-0 fw-bold" th:text="${f.source}"></h5>
+                            <div class="route-line mx-2"></div>
+                            <i class="fas fa-plane text-primary small"></i>
+                            <div class="route-line mx-2"></div>
+                            <h5 class="mb-0 fw-bold" th:text="${f.destination}"></h5>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <h5 class="text-success fw-bold" th:text="'$' + ${f.basePrice}"></h5>
+                        <a th:href="@{/booking/select-seats(flightId=${f.flightId})}" class="btn btn-sm btn-dark rounded-pill shadow-sm">Book Leg</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <div class="text-center">
+            <a th:href="@{/search(source=${searchSource}, destination=${searchDest})}" class="btn btn-link text-decoration-none fw-bold">← Back to Direct Flights</a>
+        </div>
+    </div>
+
+    <div th:unless="${isSmartSearch}">
+        <div th:if="${flights != null and !flights.isEmpty()}">
+            <h5 class="mb-3 fw-bold" style="color: #222; text-shadow: 1px 1px 1px white;">Direct Flight Results:</h5>
+            <div th:each="f : ${flights}" class="card flight-card mb-3 shadow-sm" 
+                 th:classappend="${(searchSource != null and #strings.equalsIgnoreCase(searchSource, f.source)) or (searchDest != null and #strings.equalsIgnoreCase(searchDest, f.destination))} ? 'card-highlight' : ''">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <span class="badge bg-primary mb-2 shadow-sm" th:text="${f.flightId}"></span>
+                            <div class="d-flex align-items-center">
+                                <h3 class="fw-bold" th:text="${f.source}"></h3>
+                                <div class="route-line"></div>
+                                <i class="fas fa-plane text-primary"></i>
+                                <div class="route-line"></div>
+                                <h3 class="fw-bold" th:text="${f.destination}"></h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end border-start">
+                            <h2 class="text-success fw-bold" th:text="'$' + ${f.basePrice}"></h2>
+                            <a th:href="@{/booking/select-seats(flightId=${f.flightId})}" class="btn btn-dark w-100 shadow-sm">Book Now</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${searchSource != null and searchDest != null}" class="text-center mt-5 mb-5 p-4 bg-white rounded-pill shadow border" style="background: rgba(255,255,255,0.9) !important;">
+                <h5 class="text-muted mb-3">Didn't find what you're looking for?</h5>
+                <a th:href="@{/searchSmart(from=${searchSource}, to=${searchDest})}" class="btn btn-outline-primary btn-lg rounded-pill px-5 fw-bold shadow-sm">
+                    <i class="fas fa-magic me-2"></i> Show Most Optimized Route
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${error != null or (flights == null and noRecords == true)}" class="text-center mt-5 p-5 rounded shadow border" style="background: rgba(255,255,255,0.9);">
+        <i class="fas fa-search-minus fa-4x text-muted mb-3 opacity-25"></i>
+        <h4 class="fw-bold">No Direct Flights Found</h4>
+        <p class="text-muted">Try looking for connecting routes instead.</p>
+        <a th:if="${searchSource != null and searchDest != null}" 
+           th:href="@{/searchSmart(from=${searchSource}, to=${searchDest})}" 
+           class="btn btn-primary btn-lg rounded-pill px-5 shadow">Search Optimized Route</a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
